@@ -1,0 +1,2 @@
+# micrograd
+Micrograd from scratch
