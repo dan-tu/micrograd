@@ -1,1 +1,4 @@
 pytest>=7.0
+# optional: enables the Layer 11 torch cross-check (the ladder is fully
+# functional without it — Layer 9 gradchecks against finite differences).
+# torch>=2.0
