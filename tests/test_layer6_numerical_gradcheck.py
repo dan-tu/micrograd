@@ -69,3 +69,10 @@ def test_gradcheck_deep_chain():
         return v.tanh()
 
     _gradcheck(build, n_inputs=4, seed=5)
+
+
+def test_gradcheck_activation_mid_graph():
+    # tanh/exp feeding further ops, so their out.grad != 1 -- guards against a
+    # backward closure that forgets the incoming-gradient factor.
+    _gradcheck(lambda xs: xs[0].tanh() * xs[1] + xs[2], n_inputs=3, seed=6)
+    _gradcheck(lambda xs: (xs[0].exp() + xs[1]) * xs[2].tanh(), n_inputs=3, seed=7)

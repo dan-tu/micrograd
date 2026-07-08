@@ -103,3 +103,22 @@ def test_exp_backward():
     out.backward()
     # d(exp(x))/dx = exp(x)
     assert abs(a.grad - math.e) < 1e-9
+
+
+def test_activation_backward_scales_by_incoming_grad():
+    # Each of the tests above uses the activation as the FINAL op, where the
+    # gradient arriving from above (out.grad) is 1 -- so a closure that forgets
+    # to multiply by out.grad still passes them. Here the activation is an
+    # INTERMEDIATE node with a downstream factor of 3, so out.grad != 1 and the
+    # local derivative MUST be scaled by it.
+    a = Value(0.5)
+    out = a.tanh() * Value(3.0)
+    out.backward()
+    # d(3 * tanh(a))/da = 3 * (1 - tanh(a)^2)
+    assert abs(a.grad - 3.0 * (1 - math.tanh(0.5) ** 2)) < 1e-9
+
+    b = Value(0.7)
+    out = b.exp() * Value(4.0)
+    out.backward()
+    # d(4 * exp(b))/db = 4 * exp(b)
+    assert abs(b.grad - 4.0 * math.exp(0.7)) < 1e-9
