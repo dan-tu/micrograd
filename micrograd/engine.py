@@ -165,12 +165,11 @@ class Value:
         deps = []
         seen = set()
         def visit(v):
-            if v in seen: 
-                return
-            seen.add(v)
-            for child in v._prev:
-                visit(child)
-            deps.append(v)
+            if v not in seen: 
+                seen.add(v)
+                for child in v._prev:
+                    visit(child)
+                deps.append(v)
         visit(self)
 
         self.grad = 1
@@ -212,4 +211,4 @@ class Value:
 
     # ---- Provided: string form, handy when debugging ----
     def __repr__(self):
-        return f"Value(data={self.data}, grad={self.grad})"
+        return f"Value(data={self.data}, grad={self.grad}, op={self._op})"

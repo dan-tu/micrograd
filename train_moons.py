@@ -26,6 +26,18 @@ def train_moons(seed=1):
     rule, the learning-rate schedule, the number of steps, and the network
     shape. Seed the RNG at the start so the run is reproducible.
 
+    Scope — keep it minimal (this proves the engine can train, nothing more;
+    it mirrors Karpathy's micrograd demo):
+      * Full-batch: each step, run ALL the points through the model, sum the
+        loss, one backward(), one update. No minibatches, and no
+        train/val/test split -- train and score on the same data. (That
+        discipline is the next study-plan milestone, on MNIST.)
+      * A FIXED number of steps (~50-100), not "loop until accuracy". With
+        full-batch, one step == one epoch over the data. accuracy > 0.80 is an
+        end-of-run gate check, not a stopping condition.
+      * Keep the net small -- scalar autograd is slow (a Value per operation).
+        [8] or [16] hidden units, not hundreds.
+
     Returns
     -------
     (model, history) where `history` is a dict containing at least:
@@ -36,7 +48,40 @@ def train_moons(seed=1):
     The gate asserts  history["final_loss"] < history["first_loss"]  and
     history["accuracy"] > 0.80  (a working training run clears that easily).
     """
-    raise NotImplementedError
+    N_STEPS = 50
+    ALPHA = 0.01
+
+    X, y = make_moons()
+    model = MLP(len(X[0]), [16, 32, 1])
+    history = {}
+
+    for n in range(N_STEPS):
+        loss = 0.0
+        correct = 0
+        for x_i, y_i in zip(X, y):
+            out = model(x_i)
+            loss = loss + (y_i - out)**2
+            y_hat = out.data >= 0.5
+            if y_hat == y_i:
+                correct += 1
+        accuracy = correct / len(y)
+
+        # Use MSE for loss function
+        loss = loss / len(y)
+        loss.backward()
+
+        # Update weights
+        for param in model.parameters():
+            param.data = param.data - param.grad * ALPHA
+        model.zero_grad()
+
+        # Report some stats
+        print(f"[Step {n}] loss = {loss}, accuracy = {accuracy}")
+        if n == 0:
+            history["first_loss"] = loss.data
+        history["accuracy"] = accuracy
+        history["final_loss"] = loss.data
+    return (model, history)
 
 
 if __name__ == "__main__":
